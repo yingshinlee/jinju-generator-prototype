@@ -6,8 +6,8 @@
 <title>金句產生器 · 上線後的樣子（Matters 文章頁模擬）</title>
 <script src="./html-to-image.js"></script>
 <script src="./qrcode.browser.js"></script>
-<script src="./logos.js?v=9"></script>
-<script src="./card.js?v=9"></script>
+<script src="./logos.js?v=10"></script>
+<script src="./card.js?v=10"></script>
 <style>
   :root{
     --sans:'PingFang TC','PingFang SC','Microsoft JhengHei','Noto Sans TC',sans-serif;
@@ -143,10 +143,19 @@ function onSelect(){
   pop.classList.add('show');
   const pw=pop.offsetWidth, ph=pop.offsetHeight;
   pop.style.left=Math.max(8,Math.min(window.innerWidth-pw-8, rect.left+rect.width/2-pw/2))+'px';
-  pop.style.top=(rect.top-ph-10)+'px';
+  // 預設在選取上方；若太靠頂端（手機常見）則改放下方
+  const topAbove=rect.top-ph-10;
+  pop.style.top=(topAbove<8 ? rect.bottom+10 : topAbove)+'px';
 }
+// 桌機：mouseup；手機觸控：touchend + 防抖的 selectionchange
+let selTimer;
+const scheduleSelect=()=>{ clearTimeout(selTimer); selTimer=setTimeout(onSelect,300); };
 document.addEventListener('mouseup',()=>setTimeout(onSelect,10));
-document.addEventListener('selectionchange',()=>{ if(!document.getSelection().toString().trim()) pop.classList.remove('show'); });
+document.addEventListener('touchend',()=>setTimeout(onSelect,250));
+document.addEventListener('selectionchange',()=>{
+  if(!document.getSelection().toString().trim()){ pop.classList.remove('show'); }
+  else { scheduleSelect(); }
+});
 $('#btnQuote').onclick=()=>{ alert('（既有功能）已將這段話以「引用」格式帶入評論框：\n\n「'+curQuote+'」'); pop.classList.remove('show'); };
 $('#btnCard').onclick=()=>{ pop.classList.remove('show'); openDialog(); };
 
