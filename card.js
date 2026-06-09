@@ -12,6 +12,8 @@ window.QuoteCard = (function () {
     {id:'heavy',  name:'墨黑', sw:'#000000', bg:'#000000', quoteColor:'#ffffff', accent:'#c0a46b', sub:'#c0a46b', font:SERIF, wide:true, qrDark:'#c0a46b', qrLight:'#000000', logo:'white'},
     {id:'lyrical',name:'松綠', sw:'#0d6763', bg:'#0d6763', quoteColor:'#faf7f0', accent:'#40bfa5', sub:'#a9d9cf', font:SERIF, qrDark:'#faf7f0', qrLight:'#0d6763', logo:'white'},
     {id:'healing',name:'薄荷', sw:'#70b388', bg:'linear-gradient(160deg,#f2faf7 0%,#f2fbd9 100%)', quoteColor:'#246802', accent:'#70b388', sub:'#70b388', font:SERIF, qrDark:'#246802', qrLight:'#f7fbef'},
+    {id:'violet', name:'靛紫', sw:'#5a43e5', bg:'#5a43e5', quoteColor:'#f5f3ff', accent:'#b9aef4', sub:'#d5cffe', font:SANS, weight:500, logo:'white', qrDark:'#f5f3ff', qrLight:'#5a43e5'},
+    {id:'slate',  name:'霧灰', sw:'#9a9aa0', bg:'#f4f4f5', quoteColor:'#2b2b2e', accent:'#9a9aa0', sub:'#8c8c92', font:SANS, weight:400, qrDark:'#333333', qrLight:'#f4f4f5'},
   ];
 
   // 尺寸（含適合平台備註）
