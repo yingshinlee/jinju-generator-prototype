@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matters 金句產生器 · 原型</title>
+<style>
+  :root{--green:#0d6763;--sans:'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);background:#f4f6f5;color:#333;
+       min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+  h1{font-size:28px;margin:0 0 8px}
+  .sub{color:#888;font-size:15px;margin:0 0 40px;text-align:center;line-height:1.6}
+  .cards{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;max-width:820px}
+  .card{background:#fff;border-radius:18px;padding:30px;width:360px;max-width:100%;
+        box-shadow:0 8px 30px rgba(0,0,0,.08);text-decoration:none;color:inherit;
+        display:flex;flex-direction:column;transition:.18s;border:2px solid transparent}
+  .card:hover{transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.12);border-color:var(--green)}
+  .emoji{font-size:40px}
+  .card h2{font-size:20px;margin:14px 0 8px}
+  .card p{color:#777;font-size:14px;line-height:1.7;margin:0 0 18px;flex:1}
+  .go{color:var(--green);font-weight:600;font-size:15px}
+  .foot{margin-top:40px;color:#aaa;font-size:13px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+  <h1>Matters 金句產生器</h1>
+  <p class="sub">選取文章金句 → 生成可下載／分享的圖片卡片<br>這是設計原型，歡迎試玩、提意見 🙌</p>
+  <div class="cards">
+    <a class="card" href="live.html">
+      <div class="emoji">📱</div>
+      <h2>上線後的樣子</h2>
+      <p>模擬真實 Matters 文章頁：用滑鼠選取內文任一句話，會跳出按鈕 → 開啟分享卡片。最接近實際使用體驗。</p>
+      <span class="go">開始體驗 →</span>
+    </a>
+    <a class="card" href="playground.html">
+      <div class="emoji">🎨</div>
+      <h2>風格調整台</h2>
+      <p>自由切換 6 種風格 × 3 種尺寸、即時改文字、下載 JPG。方便快速比較各種樣式。</p>
+      <span class="go">打開調整台 →</span>
+    </a>
+  </div>
+  <p class="foot">桌機請用「下載 JPG」；手機上點「分享」可直接傳到 Instagram 等。<br>顏色／字體皆取自 Matters design-system。</p>
+</body>
+</html>

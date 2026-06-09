@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matters 金句產生器（原型）</title>
+<script src="./html-to-image.js"></script>
+<script src="./qrcode.browser.js"></script>
+<script src="./logos.js"></script>
+<script src="./card.js"></script>
+<style>
+  :root{
+    --sans:'PingFang TC','PingFang SC','Microsoft JhengHei','Noto Sans TC',sans-serif;
+    --serif:'Noto Serif TC','Songti TC','Songti SC','NSimSun',serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);background:#f2f2f2;color:#333;display:flex;min-height:100vh}
+  .panel{width:380px;flex:0 0 380px;background:#fff;padding:28px 26px;overflow-y:auto;border-right:1px solid #e6e6e6;height:100vh}
+  .panel h1{font-size:20px;margin:0 0 4px}
+  .panel .sub{font-size:13px;color:#999;margin:0 0 24px}
+  .grp{margin-bottom:24px}
+  .grp > label{display:block;font-size:13px;font-weight:600;color:#666;margin-bottom:8px;letter-spacing:.04em}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opt{border:1.5px solid #ddd;background:#fff;border-radius:10px;padding:8px 12px;font-size:14px;cursor:pointer;font-family:var(--sans);transition:.15s;text-align:left}
+  .opt:hover{border-color:#999}
+  .opt.on{border-color:#0d6763;background:#f2faf7;color:#0d6763;font-weight:600}
+  .opt .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1px solid rgba(0,0,0,.1)}
+  .opt .note{display:block;font-size:11px;color:#999;margin-top:3px;font-weight:400}
+  .opt.on .note{color:#5a9b8e}
+  textarea,input{width:100%;border:1.5px solid #ddd;border-radius:10px;padding:10px 12px;font-size:14px;font-family:var(--sans);resize:vertical}
+  textarea:focus,input:focus{outline:none;border-color:#0d6763}
+  .chk{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#555;line-height:1.5;font-weight:400;cursor:pointer}
+  .chk input{width:auto;margin-top:2px}
+  .trunc{font-size:12px;color:#c8794f;margin-top:6px;display:none;line-height:1.5}
+  .trunc.show{display:block}
+  .counter{font-size:12px;color:#aaa;margin-top:6px}
+  .actions{display:flex;gap:10px;margin-top:8px}
+  .btn{flex:1;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+  .btn.primary{background:#0d6763;color:#fff}
+  .btn.primary:hover{background:#0a524f}
+  .btn.ghost{background:#f0f0f0;color:#333}
+  .btn.ghost:hover{background:#e4e4e4}
+  .hint{font-size:12px;color:#aaa;line-height:1.6;margin-top:14px}
+  .preview{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;overflow:auto}
+  #stage{transform-origin:center center}
+</style>
+</head>
+<body>
+  <div class="panel">
+    <h1>金句產生器</h1>
+    <p class="sub">原型 · 選風格與尺寸，下載分享</p>
+
+    <div class="grp"><label>風格</label><div class="opts" id="styleOpts"></div></div>
+    <div class="grp"><label>尺寸</label><div class="opts" id="sizeOpts"></div></div>
+
+    <div class="grp">
+      <label>金句</label>
+      <textarea id="fQuote" rows="3">我們之所以書寫，是為了記住那些終將被時間沖淡的瞬間。</textarea>
+      <div class="counter" id="counter"></div>
+      <div class="trunc" id="truncNote"></div>
+    </div>
+    <div class="grp"><label>作者</label><input id="fAuthor" value="林深"></div>
+    <div class="grp"><label>文章標題</label><input id="fTitle" value="在城市的縫隙裡尋找光"></div>
+    <div class="grp"><label>文章連結（QR Code）</label><input id="fUrl" value="https://matters.town/e/nxy5zqcjs7lt"></div>
+    <div class="grp"><label>活動</label><label class="chk"><input type="checkbox" id="fSevenDay"> 這是「七日書」活動文章（改放七日書 Logo）</label></div>
+
+    <div class="actions">
+      <button class="btn primary" id="download">下載 JPG</button>
+      <button class="btn ghost" id="share">分享</button>
+    </div>
+    <p class="hint">提示：「分享」在手機上會叫出系統分享選單（可分享到 Instagram 等）；電腦上請用「下載 JPG」後再上傳。</p>
+  </div>
+
+  <div class="preview"><div id="stage"><div id="card"></div></div></div>
+
+<script>
+const {STYLES, SIZES} = QuoteCard;
+let curStyle=STYLES.find(s=>s.id==='lyrical'), curSize=SIZES.find(s=>s.id==='portrait');
+const $=s=>document.querySelector(s);
+const card=$('#card'), stage=$('#stage');
+
+function buildOpts(){
+  $('#styleOpts').innerHTML=STYLES.map(s=>`<button class="opt" data-style="${s.id}"><span class="sw" style="background:${s.sw}"></span>${s.name}</button>`).join('');
+  $('#sizeOpts').innerHTML=SIZES.map(s=>`<button class="opt" data-size="${s.id}">${s.name}<span class="note">${s.note}</span></button>`).join('');
+  document.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{curStyle=STYLES.find(x=>x.id===b.dataset.style);render();});
+  document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{curSize=SIZES.find(x=>x.id===b.dataset.size);render();});
+}
+function markActive(){
+  document.querySelectorAll('[data-style]').forEach(b=>b.classList.toggle('on',b.dataset.style===curStyle.id));
+  document.querySelectorAll('[data-size]').forEach(b=>b.classList.toggle('on',b.dataset.size===curSize.id));
+}
+async function render(){
+  markActive();
+  const r=await QuoteCard.render(card,{
+    quote:$('#fQuote').value, author:$('#fAuthor').value, title:$('#fTitle').value,
+    url:$('#fUrl').value, style:curStyle, size:curSize, isSevenDay:$('#fSevenDay').checked,
+  });
+  const len=($('#fQuote').value||'').trim().length;
+  $('#counter').textContent=`${len} / ${QuoteCard.MAX_QUOTE_LEN} 字`;
+  const note=$('#truncNote');
+  if(r.truncated){ note.textContent=`⚠ 超過 ${QuoteCard.MAX_QUOTE_LEN} 字，圖片只顯示前 ${QuoteCard.MAX_QUOTE_LEN} 字。`; note.classList.add('show'); }
+  else note.classList.remove('show');
+  const maxH=Math.min(window.innerHeight-100,760), maxW=window.innerWidth-380-100;
+  const scale=Math.min(maxH/curSize.h, maxW/curSize.w, 1);
+  card.style.transform=`scale(${scale})`; card.style.transformOrigin='top left';
+  stage.style.width=(curSize.w*scale)+'px'; stage.style.height=(curSize.h*scale)+'px';
+}
+$('#download').onclick=async()=>{ await render(); const u=await QuoteCard.toJpeg(card,curSize); const a=document.createElement('a'); a.href=u; a.download=`matters-金句-${curStyle.id}-${curSize.id}.jpg`; a.click(); };
+$('#share').onclick=async()=>{
+  await render(); const u=await QuoteCard.toJpeg(card,curSize);
+  const blob=await (await fetch(u)).blob(); const file=new File([blob],'matters-quote.jpg',{type:'image/jpeg'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){ try{await navigator.share({files:[file],title:'Matters 金句'});}catch(e){} }
+  else { alert('此裝置/瀏覽器不支援系統分享，已改用下載。'); const a=document.createElement('a');a.href=u;a.download='matters-金句.jpg';a.click(); }
+};
+['fQuote','fAuthor','fTitle','fUrl'].forEach(id=>$('#'+id).addEventListener('input',render));
+$('#fSevenDay').addEventListener('change',render);
+window.addEventListener('resize',render);
+buildOpts();
+render();
+</script>
+</body>
+</html>

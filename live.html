@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>金句產生器 · 上線後的樣子（Matters 文章頁模擬）</title>
+<script src="./html-to-image.js"></script>
+<script src="./qrcode.browser.js"></script>
+<script src="./logos.js"></script>
+<script src="./card.js"></script>
+<style>
+  :root{
+    --sans:'PingFang TC','PingFang SC','Microsoft JhengHei','Noto Sans TC',sans-serif;
+    --serif:'Noto Serif TC','Songti TC','Songti SC','NSimSun',serif;
+    --green:#0d6763; --green-hover:#0a524f; --grey:#b3b3b3; --grey-dark:#808080;
+    --black:#333; --line:#ededed;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);color:var(--black);background:#fff;-webkit-font-smoothing:antialiased}
+  .nav{position:sticky;top:0;z-index:50;height:60px;border-bottom:1px solid var(--line);
+       display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#fff}
+  .nav .logo{font-weight:700;font-size:20px;letter-spacing:.02em}
+  .nav .right{display:flex;gap:10px;align-items:center}
+  .nav .pill{font-size:14px;color:var(--grey-dark);border:1px solid var(--line);border-radius:999px;padding:7px 16px}
+  .nav .pill.green{background:var(--green);color:#fff;border-color:var(--green)}
+  .banner{max-width:640px;margin:32px auto 0;padding:0 24px}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:#f2faf7;color:var(--green);
+         font-size:13px;font-weight:600;border-radius:999px;padding:6px 14px}
+  article{max-width:640px;margin:0 auto;padding:20px 24px 120px}
+  h1.title{font-size:32px;line-height:1.6875;font-weight:600;margin:14px 0 20px;font-family:var(--sans)}
+  .byline{display:flex;align-items:center;gap:12px;margin-bottom:36px}
+  .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#70b388,#0d6763)}
+  .byline .name{font-weight:600;font-size:15px}
+  .byline .meta{font-size:13px;color:var(--grey-dark)}
+  .body{font-family:var(--serif);font-size:17px;line-height:1.9;color:#1a1a1a}
+  .body p{margin:0 0 28px}
+  .tip{font-size:13px;color:var(--grey-dark);background:#f7f7f7;border-radius:10px;padding:12px 16px;margin:0 0 28px;font-family:var(--sans);line-height:1.6}
+
+  /* 選取氣泡（沿用 matters-web 真實樣式） */
+  #popover{position:fixed;z-index:100;display:none;align-items:center;background:#000;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  #popover.show{display:flex}
+  #popover::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);border:7px solid transparent;border-top-color:#000;border-bottom:0}
+  #popover button{background:none;border:none;color:#fff;cursor:pointer;padding:11px 13px;display:flex;align-items:center;gap:6px;font-size:14px;font-family:var(--sans)}
+  #popover button:hover{opacity:.65}
+  #popover .divider{width:1px;height:20px;background:#808080}
+  #popover svg{width:20px;height:20px;display:block}
+
+  /* 分享對話框 */
+  #overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px}
+  #overlay.show{display:flex}
+  .dialog{background:#fff;border-radius:16px;width:600px;max-width:100%;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .dialog header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
+  .dialog header h2{margin:0;font-size:17px;font-weight:600}
+  .dialog header .x{border:none;background:none;font-size:22px;color:var(--grey-dark);cursor:pointer;line-height:1}
+  .dialog .scroll{overflow-y:auto;padding:22px}
+  .qpreview{display:flex;justify-content:center;background:#f4f4f4;border-radius:12px;padding:22px;margin-bottom:10px}
+  .trunc{font-size:12px;color:#c8794f;background:#fff7f0;border-radius:8px;padding:8px 12px;margin-bottom:16px;display:none;line-height:1.5}
+  .trunc.show{display:block}
+  .ctl{margin-bottom:18px}
+  .ctl > label{display:block;font-size:13px;font-weight:600;color:#666;margin-bottom:8px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opt{border:1.5px solid #ddd;background:#fff;border-radius:9px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:var(--sans);text-align:left}
+  .opt .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1px solid rgba(0,0,0,.1)}
+  .opt .note{display:block;font-size:11px;color:#999;margin-top:3px;font-weight:400}
+  .opt.on{border-color:var(--green);background:#f2faf7;color:var(--green);font-weight:600}
+  .opt.on .note{color:#5a9b8e}
+  .autobadge{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--green);background:#f2faf7;border-radius:8px;padding:8px 12px}
+  .dialog footer{display:flex;gap:10px;padding:16px 22px;border-top:1px solid var(--line)}
+  .btn{flex:1;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+  .btn.primary{background:var(--green);color:#fff}
+  .btn.primary:hover{background:var(--green-hover)}
+  .btn.ghost{background:#f0f0f0;color:#333}
+  .btn.ghost:hover{background:#e4e4e4}
+  .hand{font-size:12px;color:#bbb;text-align:center;padding:6px 0 30px;font-family:var(--sans)}
+</style>
+</head>
+<body>
+  <div class="nav">
+    <div class="logo">Matters</div>
+    <div class="right"><span class="pill">搜尋</span><span class="pill green">創作</span></div>
+  </div>
+
+  <div class="banner"><span class="badge">✦ 七日書・第六屆「重新理解世界的方式」</span></div>
+
+  <article>
+    <h1 class="title">在城市的縫隙裡尋找光</h1>
+    <div class="byline">
+      <div class="avatar"></div>
+      <div><div class="name">林深</div><div class="meta">2026年6月9日 · 閱讀 4 分鐘</div></div>
+    </div>
+    <div class="tip">👇 試試看：用滑鼠選取下面內文的任何一句話，就會跳出引用／金句圖的按鈕。（選太長會自動截斷，金句以精煉為佳）</div>
+    <div class="body" id="articleBody">
+      <p>清晨五點，城市還沒醒。我習慣在這個時刻起床，不是因為勤奮，而是因為只有此刻，街道屬於我一個人。路燈在薄霧裡暈成一團團橘色的光，像誰隨手畫下又忘了擦去的記號。</p>
+      <p>我們之所以書寫，是為了記住那些終將被時間沖淡的瞬間。那些當下以為會永遠記得、後來卻怎麼也想不起來的細節——某個午後的氣味、某句沒說出口的話、某個人轉身離開時的背影。文字是我們對抗遺忘的方式，雖然它本身也會褪色。</p>
+      <p>七日書的第一天，我坐在窗前發呆了很久。要寫什麼呢？生活並沒有發生什麼大事，日子像被反覆折疊的紙，每一道摺痕都長得差不多。但當我真正開始寫，才發現那些以為平凡的縫隙裡，其實藏著許多光。</p>
+      <p>或許重新理解世界的方式，不是去尋找更壯闊的風景，而是學會在最熟悉的地方，重新睜開眼睛。</p>
+    </div>
+  </article>
+
+  <div id="popover">
+    <button id="btnQuote" title="引用到評論">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    </button>
+    <span class="divider"></span>
+    <button id="btnCard" title="製作金句圖">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    </button>
+  </div>
+
+  <div id="overlay">
+    <div class="dialog" role="dialog" aria-modal="true">
+      <header><h2>分享金句</h2><button class="x" id="btnClose">×</button></header>
+      <div class="scroll">
+        <div class="qpreview"><div id="qstage"><div id="qcard"></div></div></div>
+        <div class="trunc" id="truncNote"></div>
+        <div class="ctl"><label>風格</label><div class="opts" id="styleOpts"></div></div>
+        <div class="ctl"><label>尺寸</label><div class="opts" id="sizeOpts"></div></div>
+      </div>
+      <footer>
+        <button class="btn primary" id="btnDownload">下載 JPG</button>
+        <button class="btn ghost" id="btnShare">分享</button>
+      </footer>
+    </div>
+  </div>
+  <div class="hand">這是「上線後」的互動模擬 · 非真實 Matters 站點</div>
+
+<script>
+const {STYLES, SIZES} = QuoteCard;
+const ARTICLE={title:'在城市的縫隙裡尋找光',author:'林深',url:'https://matters.town/e/nxy5zqcjs7lt',isSevenDay:true};
+let curStyle=STYLES.find(s=>s.id==='lyrical'), curSize=SIZES.find(s=>s.id==='portrait'), curQuote='';
+const $=s=>document.querySelector(s);
+const pop=$('#popover'), overlay=$('#overlay'), qcard=$('#qcard'), qstage=$('#qstage');
+
+/* 文章選取 → 氣泡 */
+function onSelect(){
+  const sel=document.getSelection();
+  const text=sel && sel.toString().trim();
+  const body=$('#articleBody');
+  if(!text || !sel.rangeCount || !body.contains(sel.getRangeAt(0).commonAncestorContainer)){ pop.classList.remove('show'); return; }
+  curQuote=text;
+  const rect=sel.getRangeAt(0).getBoundingClientRect();
+  pop.classList.add('show');
+  const pw=pop.offsetWidth, ph=pop.offsetHeight;
+  pop.style.left=Math.max(8,Math.min(window.innerWidth-pw-8, rect.left+rect.width/2-pw/2))+'px';
+  pop.style.top=(rect.top-ph-10)+'px';
+}
+document.addEventListener('mouseup',()=>setTimeout(onSelect,10));
+document.addEventListener('selectionchange',()=>{ if(!document.getSelection().toString().trim()) pop.classList.remove('show'); });
+$('#btnQuote').onclick=()=>{ alert('（既有功能）已將這段話以「引用」格式帶入評論框：\n\n「'+curQuote+'」'); pop.classList.remove('show'); };
+$('#btnCard').onclick=()=>{ pop.classList.remove('show'); openDialog(); };
+
+/* 對話框 */
+function buildOpts(){
+  $('#styleOpts').innerHTML=STYLES.map(s=>`<button class="opt" data-style="${s.id}"><span class="sw" style="background:${s.sw}"></span>${s.name}</button>`).join('');
+  $('#sizeOpts').innerHTML=SIZES.map(s=>`<button class="opt" data-size="${s.id}">${s.name}<span class="note">${s.note}</span></button>`).join('');
+  document.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{curStyle=STYLES.find(x=>x.id===b.dataset.style);renderCard();});
+  document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>{curSize=SIZES.find(x=>x.id===b.dataset.size);renderCard();});
+}
+function markActive(){
+  document.querySelectorAll('[data-style]').forEach(b=>b.classList.toggle('on',b.dataset.style===curStyle.id));
+  document.querySelectorAll('[data-size]').forEach(b=>b.classList.toggle('on',b.dataset.size===curSize.id));
+}
+async function renderCard(){
+  markActive();
+  const r=await QuoteCard.render(qcard,{quote:curQuote,author:ARTICLE.author,title:ARTICLE.title,url:ARTICLE.url,style:curStyle,size:curSize,isSevenDay:ARTICLE.isSevenDay});
+  const note=$('#truncNote');
+  if(r.truncated){ note.textContent=`⚠ 你選取了 ${r.original} 字，已截取前 ${QuoteCard.MAX_QUOTE_LEN} 字。金句建議精煉一點，效果更好。`; note.classList.add('show'); }
+  else note.classList.remove('show');
+  const previewW=Math.min(320, overlay.clientWidth-120);
+  const scale=previewW/curSize.w;
+  qcard.style.transform=`scale(${scale})`; qcard.style.transformOrigin='top left';
+  qstage.style.width=(curSize.w*scale)+'px'; qstage.style.height=(curSize.h*scale)+'px';
+}
+function openDialog(){ overlay.classList.add('show'); renderCard(); }
+function closeDialog(){ overlay.classList.remove('show'); }
+$('#btnClose').onclick=closeDialog;
+overlay.onclick=e=>{ if(e.target===overlay) closeDialog(); };
+$('#btnDownload').onclick=async()=>{ await renderCard(); const u=await QuoteCard.toJpeg(qcard,curSize); const a=document.createElement('a'); a.href=u; a.download=`matters-金句-${curStyle.id}-${curSize.id}.jpg`; a.click(); };
+$('#btnShare').onclick=async()=>{
+  await renderCard(); const u=await QuoteCard.toJpeg(qcard,curSize);
+  const blob=await (await fetch(u)).blob(); const file=new File([blob],'matters-quote.jpg',{type:'image/jpeg'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){ try{await navigator.share({files:[file],title:'Matters 金句'});}catch(e){} }
+  else { alert('此裝置不支援系統分享，已改用下載。'); const a=document.createElement('a');a.href=u;a.download='matters-金句.jpg';a.click(); }
+};
+buildOpts();
+</script>
+</body>
+</html>
